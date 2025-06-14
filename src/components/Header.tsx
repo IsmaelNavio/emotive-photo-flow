@@ -2,6 +2,7 @@
 import { Camera, ShoppingCart, User, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 interface HeaderProps {
   cartCount?: number;
@@ -17,27 +18,27 @@ const Header = ({ cartCount = 0, onCartClick, isAdmin = false }: HeaderProps) =>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-2">
             <Camera className="h-8 w-8 text-photo-gold" />
             <span className="text-xl font-bold text-photo-dark">PhotoStudio</span>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="/" className="text-photo-gray hover:text-photo-dark transition-colors">
+            <Link to="/" className="text-photo-gray hover:text-photo-dark transition-colors">
               Inicio
-            </a>
+            </Link>
             {isAdmin && (
-              <a href="/admin" className="text-photo-gray hover:text-photo-dark transition-colors">
+              <Link to="/admin" className="text-photo-gray hover:text-photo-dark transition-colors">
                 Panel Admin
-              </a>
+              </Link>
             )}
-            <a href="/galerías" className="text-photo-gray hover:text-photo-dark transition-colors">
+            <Link to="/galleries" className="text-photo-gray hover:text-photo-dark transition-colors">
               Galerías
-            </a>
-            <a href="/contacto" className="text-photo-gray hover:text-photo-dark transition-colors">
+            </Link>
+            <Link to="/contact" className="text-photo-gray hover:text-photo-dark transition-colors">
               Contacto
-            </a>
+            </Link>
           </nav>
 
           {/* Actions */}
@@ -78,20 +79,20 @@ const Header = ({ cartCount = 0, onCartClick, isAdmin = false }: HeaderProps) =>
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-100">
             <nav className="flex flex-col space-y-2">
-              <a href="/" className="text-photo-gray hover:text-photo-dark transition-colors py-2">
+              <Link to="/" className="text-photo-gray hover:text-photo-dark transition-colors py-2">
                 Inicio
-              </a>
+              </Link>
               {isAdmin && (
-                <a href="/admin" className="text-photo-gray hover:text-photo-dark transition-colors py-2">
+                <Link to="/admin" className="text-photo-gray hover:text-photo-dark transition-colors py-2">
                   Panel Admin
-                </a>
+                </Link>
               )}
-              <a href="/galerías" className="text-photo-gray hover:text-photo-dark transition-colors py-2">
+              <Link to="/galleries" className="text-photo-gray hover:text-photo-dark transition-colors py-2">
                 Galerías
-              </a>
-              <a href="/contacto" className="text-photo-gray hover:text-photo-dark transition-colors py-2">
+              </Link>
+              <Link to="/contact" className="text-photo-gray hover:text-photo-dark transition-colors py-2">
                 Contacto
-              </a>
+              </Link>
             </nav>
           </div>
         )}

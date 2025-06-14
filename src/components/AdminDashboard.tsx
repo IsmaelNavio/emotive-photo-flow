@@ -1,15 +1,16 @@
-
 import { useState } from "react";
-import { Upload, Users, Package, Settings, BarChart3, Plus, Eye } from "lucide-react";
+import { Upload, Users, Package, Settings, BarChart3, Plus, Eye, Copy, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
 
 const AdminDashboard = () => {
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const { toast } = useToast();
 
   const mockStats = {
     totalGalleries: 12,
@@ -19,9 +20,33 @@ const AdminDashboard = () => {
   };
 
   const mockGalleries = [
-    { id: 1, name: "Boda María & Carlos", photos: 87, status: "active", createdAt: "2024-01-15" },
-    { id: 2, name: "Sesión Familiar López", photos: 45, status: "active", createdAt: "2024-01-10" },
-    { id: 3, name: "Evento Corporativo ABC", photos: 156, status: "inactive", createdAt: "2024-01-05" },
+    { 
+      id: 1, 
+      name: "Boda María & Carlos", 
+      photos: 87, 
+      status: "active", 
+      createdAt: "2024-01-15",
+      clientToken: "abc123xyz789",
+      clientEmail: "maria.carlos@email.com"
+    },
+    { 
+      id: 2, 
+      name: "Sesión Familiar López", 
+      photos: 45, 
+      status: "active", 
+      createdAt: "2024-01-10",
+      clientToken: "def456uvw012",
+      clientEmail: "familia.lopez@email.com"
+    },
+    { 
+      id: 3, 
+      name: "Evento Corporativo ABC", 
+      photos: 156, 
+      status: "inactive", 
+      createdAt: "2024-01-05",
+      clientToken: "ghi789rst345",
+      clientEmail: "eventos@abc.com"
+    },
   ];
 
   const mockOrders = [
@@ -29,6 +54,23 @@ const AdminDashboard = () => {
     { id: 2, gallery: "Sesión Familiar López", client: "lopez@email.com", amount: 45, status: "pending" },
     { id: 3, gallery: "Evento Corporativo ABC", client: "empresa@abc.com", amount: 156, status: "processing" },
   ];
+
+  const generateClientLink = (token: string) => {
+    return `${window.location.origin}/client/${token}`;
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Enlace copiado",
+      description: "El enlace del cliente ha sido copiado al portapapeles",
+    });
+  };
+
+  const generateNewToken = () => {
+    // Generar un token único (en producción sería más seguro)
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -112,26 +154,58 @@ const AdminDashboard = () => {
               {mockGalleries.map((gallery) => (
                 <Card key={gallery.id}>
                   <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold text-photo-dark">{gallery.name}</h3>
-                        <p className="text-sm text-photo-gray">{gallery.photos} fotos • Creado: {gallery.createdAt}</p>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold text-photo-dark">{gallery.name}</h3>
+                          <p className="text-sm text-photo-gray">{gallery.photos} fotos • Creado: {gallery.createdAt}</p>
+                          <p className="text-sm text-photo-gray">Cliente: {gallery.clientEmail}</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            gallery.status === 'active' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {gallery.status === 'active' ? 'Activa' : 'Inactiva'}
+                          </span>
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4 mr-2" />
+                            Ver
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <Settings className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          gallery.status === 'active' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {gallery.status === 'active' ? 'Activa' : 'Inactiva'}
-                        </span>
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4 mr-2" />
-                          Ver
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Settings className="h-4 w-4" />
-                        </Button>
+                      
+                      {/* Enlace del cliente */}
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <Label className="text-sm font-medium text-photo-dark">Enlace del cliente:</Label>
+                        <div className="flex items-center space-x-2 mt-2">
+                          <Input 
+                            value={generateClientLink(gallery.clientToken)} 
+                            readOnly 
+                            className="text-sm bg-white"
+                          />
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => copyToClipboard(generateClientLink(gallery.clientToken))}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => window.open(generateClientLink(gallery.clientToken), '_blank')}
+                          >
+                            <LinkIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <p className="text-xs text-photo-gray mt-1">
+                          Comparte este enlace con tu cliente para que pueda acceder a su galería privada
+                        </p>
                       </div>
                     </div>
                   </CardContent>
@@ -144,7 +218,7 @@ const AdminDashboard = () => {
           <TabsContent value="upload" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Subir Nuevas Fotos</CardTitle>
+                <CardTitle>Subir Nueva Galería</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -183,9 +257,20 @@ const AdminDashboard = () => {
                   )}
                 </div>
 
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-photo-dark mb-2">
+                    <LinkIcon className="h-4 w-4 inline mr-2" />
+                    Enlace automático para el cliente
+                  </h4>
+                  <p className="text-sm text-photo-gray">
+                    Al crear la galería, se generará automáticamente un enlace único que podrás enviar al cliente. 
+                    Con este enlace, el cliente podrá crear su cuenta y acceder exclusivamente a sus fotos.
+                  </p>
+                </div>
+
                 <Button className="w-full bg-photo-gold hover:bg-photo-gold/90">
                   <Upload className="h-4 w-4 mr-2" />
-                  Subir Galería
+                  Crear Galería y Generar Enlace
                 </Button>
               </CardContent>
             </Card>
