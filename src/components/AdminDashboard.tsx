@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Upload, Users, Package, Settings, BarChart3, Plus, Eye, Copy, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,10 +7,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+
+interface Gallery {
+  id: number;
+  name: string;
+  photos: number;
+  status: 'active' | 'inactive';
+  createdAt: string;
+  clientToken: string;
+  clientEmail: string;
+  description?: string;
+}
 
 const AdminDashboard = () => {
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [galleryName, setGalleryName] = useState("");
+  const [clientEmail, setClientEmail] = useState("");
+  const [galleryDescription, setGalleryDescription] = useState("");
   const { toast } = useToast();
 
   const mockStats = {
@@ -19,7 +34,7 @@ const AdminDashboard = () => {
     pendingOrders: 5
   };
 
-  const mockGalleries = [
+  const [galleries, setGalleries] = useState<Gallery[]>([
     { 
       id: 1, 
       name: "Boda María & Carlos", 
@@ -27,7 +42,8 @@ const AdminDashboard = () => {
       status: "active", 
       createdAt: "2024-01-15",
       clientToken: "abc123xyz789",
-      clientEmail: "maria.carlos@email.com"
+      clientEmail: "maria.carlos@email.com",
+      description: "Hermosa boda en jardín"
     },
     { 
       id: 2, 
@@ -36,7 +52,8 @@ const AdminDashboard = () => {
       status: "active", 
       createdAt: "2024-01-10",
       clientToken: "def456uvw012",
-      clientEmail: "familia.lopez@email.com"
+      clientEmail: "familia.lopez@email.com",
+      description: "Sesión familiar en parque"
     },
     { 
       id: 3, 
@@ -45,9 +62,10 @@ const AdminDashboard = () => {
       status: "inactive", 
       createdAt: "2024-01-05",
       clientToken: "ghi789rst345",
-      clientEmail: "eventos@abc.com"
+      clientEmail: "eventos@abc.com",
+      description: "Evento anual de empresa"
     },
-  ];
+  ]);
 
   const mockOrders = [
     { id: 1, gallery: "Boda María & Carlos", client: "maría@email.com", amount: 89, status: "paid" },
@@ -68,8 +86,59 @@ const AdminDashboard = () => {
   };
 
   const generateNewToken = () => {
-    // Generar un token único (en producción sería más seguro)
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  };
+
+  const createNewGallery = () => {
+    if (!galleryName.trim() || !clientEmail.trim()) {
+      toast({
+        title: "Error",
+        description: "El nombre de la galería y el email del cliente son obligatorios",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newGallery: Gallery = {
+      id: galleries.length + 1,
+      name: galleryName,
+      photos: selectedFiles ? selectedFiles.length : 0,
+      status: 'active',
+      createdAt: new Date().toISOString().split('T')[0],
+      clientToken: generateNewToken(),
+      clientEmail: clientEmail,
+      description: galleryDescription || `Galería para ${clientEmail}`
+    };
+
+    setGalleries(prev => [newGallery, ...prev]);
+    
+    // Limpiar formulario
+    setGalleryName("");
+    setClientEmail("");
+    setGalleryDescription("");
+    setSelectedFiles(null);
+    
+    // Reset file input
+    const fileInput = document.getElementById('photos') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
+
+    toast({
+      title: "¡Galería creada!",
+      description: `Se ha creado la galería "${newGallery.name}" con enlace único para ${clientEmail}`,
+    });
+  };
+
+  const toggleGalleryStatus = (id: number) => {
+    setGalleries(prev => prev.map(gallery => 
+      gallery.id === id 
+        ? { ...gallery, status: gallery.status === 'active' ? 'inactive' : 'active' }
+        : gallery
+    ));
+    
+    toast({
+      title: "Estado actualizado",
+      description: "El estado de la galería ha sido cambiado",
+    });
   };
 
   return (
@@ -87,7 +156,7 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-photo-gray">Galerías activas</p>
-                  <p className="text-2xl font-bold text-photo-dark">{mockStats.totalGalleries}</p>
+                  <p className="text-2xl font-bold text-photo-dark">{galleries.filter(g => g.status === 'active').length}</p>
                 </div>
                 <Users className="h-8 w-8 text-photo-gold" />
               </div>
@@ -99,7 +168,7 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-photo-gray">Total fotos</p>
-                  <p className="text-2xl font-bold text-photo-dark">{mockStats.totalPhotos}</p>
+                  <p className="text-2xl font-bold text-photo-dark">{galleries.reduce((sum, g) => sum + g.photos, 0)}</p>
                 </div>
                 <Upload className="h-8 w-8 text-photo-gold" />
               </div>
@@ -143,15 +212,11 @@ const AdminDashboard = () => {
           {/* Galleries Tab */}
           <TabsContent value="galleries" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-photo-dark">Gestión de Galerías</h2>
-              <Button className="bg-photo-gold hover:bg-photo-gold/90">
-                <Plus className="h-4 w-4 mr-2" />
-                Nueva Galería
-              </Button>
+              <h2 className="text-xl font-semibold text-photo-dark">Gestión de Galerías ({galleries.length})</h2>
             </div>
 
             <div className="grid gap-4">
-              {mockGalleries.map((gallery) => (
+              {galleries.map((gallery) => (
                 <Card key={gallery.id}>
                   <CardContent className="p-6">
                     <div className="space-y-4">
@@ -160,16 +225,21 @@ const AdminDashboard = () => {
                           <h3 className="font-semibold text-photo-dark">{gallery.name}</h3>
                           <p className="text-sm text-photo-gray">{gallery.photos} fotos • Creado: {gallery.createdAt}</p>
                           <p className="text-sm text-photo-gray">Cliente: {gallery.clientEmail}</p>
+                          {gallery.description && (
+                            <p className="text-sm text-photo-gray italic">{gallery.description}</p>
+                          )}
                         </div>
                         <div className="flex items-center space-x-2">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
+                          <span className={`px-2 py-1 rounded-full text-xs cursor-pointer ${
                             gallery.status === 'active' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                              : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                          }`}
+                          onClick={() => toggleGalleryStatus(gallery.id)}
+                          >
                             {gallery.status === 'active' ? 'Activa' : 'Inactiva'}
                           </span>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={() => window.location.href = `/gallery/${gallery.id}`}>
                             <Eye className="h-4 w-4 mr-2" />
                             Ver
                           </Button>
@@ -218,17 +288,28 @@ const AdminDashboard = () => {
           <TabsContent value="upload" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Subir Nueva Galería</CardTitle>
+                <CardTitle>Crear Nueva Galería</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="gallery-name">Nombre de la galería</Label>
-                    <Input id="gallery-name" placeholder="Ej: Boda Juan & Ana" />
+                    <Label htmlFor="gallery-name">Nombre de la galería *</Label>
+                    <Input 
+                      id="gallery-name" 
+                      placeholder="Ej: Boda Juan & Ana" 
+                      value={galleryName}
+                      onChange={(e) => setGalleryName(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="client-email">Email del cliente</Label>
-                    <Input id="client-email" type="email" placeholder="cliente@email.com" />
+                    <Label htmlFor="client-email">Email del cliente *</Label>
+                    <Input 
+                      id="client-email" 
+                      type="email" 
+                      placeholder="cliente@email.com"
+                      value={clientEmail}
+                      onChange={(e) => setClientEmail(e.target.value)}
+                    />
                   </div>
                 </div>
 
@@ -238,11 +319,13 @@ const AdminDashboard = () => {
                     id="gallery-description" 
                     placeholder="Descripción de la sesión fotográfica..."
                     rows={3}
+                    value={galleryDescription}
+                    onChange={(e) => setGalleryDescription(e.target.value)}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="photos">Seleccionar fotos</Label>
+                  <Label htmlFor="photos">Seleccionar fotos (opcional para prueba)</Label>
                   <Input 
                     id="photos" 
                     type="file" 
@@ -268,7 +351,11 @@ const AdminDashboard = () => {
                   </p>
                 </div>
 
-                <Button className="w-full bg-photo-gold hover:bg-photo-gold/90">
+                <Button 
+                  className="w-full bg-photo-gold hover:bg-photo-gold/90"
+                  onClick={createNewGallery}
+                  disabled={!galleryName.trim() || !clientEmail.trim()}
+                >
                   <Upload className="h-4 w-4 mr-2" />
                   Crear Galería y Generar Enlace
                 </Button>
